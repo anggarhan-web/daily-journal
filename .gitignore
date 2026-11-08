@@ -1,0 +1,12 @@
+node_modules/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/
+.DS_Store
+
+# Kunci tanda tangan: JANGAN pernah di-commit
+*.keystore
+*.jks
+keystore*.txt

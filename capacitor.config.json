@@ -1,0 +1,9 @@
+{
+  "appId": "app.dailyjournal.id",
+  "appName": "Daily Journal",
+  "webDir": "www",
+  "backgroundColor": "#1a1a18",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}
