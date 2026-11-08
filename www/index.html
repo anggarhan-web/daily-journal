@@ -735,6 +735,15 @@ function toRow(e) {
   return {id: e.id, date: e.date, title: e.title, body: e.body || '', categories: (e.categories || []).join(', '),
           productivity: e.productivity || '', mood: e.mood || '', createdAt: e.createdAt || '', updatedAt: stamp(e)};
 }
+async function postRaw(url, body) {
+  const C = window.Capacitor;
+  if (isNative && C && C.Plugins && C.Plugins.CapacitorHttp) {
+    const r = await C.Plugins.CapacitorHttp.request({url, method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, data: body, responseType: 'text'});
+    return {status: r.status, text: typeof r.data === 'string' ? r.data : JSON.stringify(r.data)};
+  }
+  const r = await fetch(url, {method: 'POST', body, redirect: 'follow'});
+  return {status: r.status, text: await r.text()};
+}
 async function syncSheets(all) {
   if (!S.gsUrl) { toast('Simpan URL Apps Script terlebih dahulu'); return; }
   const list = all ? entries : entries.filter(e => stamp(e) > (S.lastSync || ''));
@@ -747,10 +756,12 @@ async function syncSheets(all) {
       const body = JSON.stringify({entries: list.slice(i, i + 25).map(toRow)});
       let d = null;
       try {
-        const r = await fetch(S.gsUrl, {method: 'POST', body, redirect: 'follow'}); // text/plain: tanpa preflight CORS
-        d = await r.json();
+        const res = await postRaw(S.gsUrl, body);
+        if (res.status >= 400) throw new Error('HTTP ' + res.status);
+        try { d = JSON.parse(res.text); } catch (_) { throw new Error('respons bukan JSON: ' + res.text.slice(0, 120)); }
       } catch (err) {
-        await fetch(S.gsUrl, {method: 'POST', body, mode: 'no-cors', redirect: 'follow'}); // terkirim, respons tak terbaca
+        if (isNative) throw err; // di APK tampilkan error aslinya, jangan disamarkan
+        await fetch(S.gsUrl, {method: 'POST', body, mode: 'no-cors', redirect: 'follow'});
         unverified = true;
       }
       if (d) {
